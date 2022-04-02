@@ -1,48 +1,62 @@
-class PhotoViewer {
-	constructor(rootElm, images) {
-		this.rootElm = rootElm;
-		this.images = images;
-		this.currentIndex = 0;
-	}
+/* eslint no-unused-vars: 0 */
+const rootElm = document.getElementById('areaSelector');
 
-	init() {
-		const nextButtonElm = this.rootElm.querySelector('.nextButton');
-		nextButtonElm.addEventListener('click', () => {
-			this.next();
-		});
-
-		const prevButtonElm = this.rootElm.querySelector('.prevButton');
-		prevButtonElm.addEventListener('click', () => {
-			this.prev();
-		});
-
-		this.updatePhoto();
-	}
-
-	updatePhoto() {
-		const frameElm = this.rootElm.querySelector('.frame');
-		const image = this.images[this.currentIndex];
-		frameElm.innerHTML = `
-		<div class="currentImage">
-			<img src="${image}" />
-		</div>
-		`;
-	}
-
-	next() {
-		this.currentIndex++;
-		this.updatePhoto();
-	}
-
-	prev() {
-		this.currentIndex--;
-		this.updatePhoto();
-	}
+async function initAreaSelector() {
+	await updatePref();
+	await updateCity();
 }
 
-const images = [
-	'https://fakeimg.pl/250x150/81DAF5',
-	'https://fakeimg.pl/250x150/F781F3',
-	'https://fakeimg.pl/250x150/81F7D8'
-];
-new PhotoViewer(document.getElementById('photoViewer'), images).init();
+async function getPrefs() {
+	const prefResponse = await fetch('./prefectures.json');
+	return await prefResponse.json();
+}
+
+async function getCities(prefCode) {
+	const cityResponse = await fetch(`./cities/${prefCode}.json`);
+	return await cityResponse.json();
+}
+
+async function updatePref() {
+	const prefs = await getPrefs();
+	createPrefOptionsHtml(prefs);
+}
+
+async function updateCity() {
+	const prefSelectorElm = rootElm.querySelector('.prefectures');
+	const cities = await getCities(prefSelectorElm.value);
+	createCityOptionsHtml(cities);
+}
+
+function createPrefOptionsHtml(prefs) {
+	const optionStrs = [];
+	for (const pref of prefs) {
+		optionStrs.push(`
+      <option name="${pref.name}" value="${pref.code}">
+        ${pref.name}
+      </option>
+    `);
+	}
+
+	const prefSelectorElm = rootElm.querySelector('.prefectures');
+	prefSelectorElm.innerHTML = optionStrs.join('');
+
+	prefSelectorElm.addEventListener('change', (event) => {
+		updateCity();
+	});
+}
+
+function createCityOptionsHtml(cities) {
+	const optionStrs = [];
+	for (const city of cities) {
+		optionStrs.push(`
+      <option name="${city.name}" value="${city.code}">
+        ${city.name}
+      </option>
+    `);
+	}
+
+	const citySelectorElm = rootElm.querySelector('.cities');
+	citySelectorElm.innerHTML = optionStrs.join('');
+}
+
+initAreaSelector();
